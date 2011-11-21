@@ -6,7 +6,7 @@
 # remote people connecting.  I hope to remove that limitation with a future
 # design change.
 
-_DEBUG_ON=true
+_DEBUG_ON=false
 
 USER_CREATE=create_osx_user
 HOME_ROOT=/Users
@@ -35,6 +35,8 @@ setup_ssh_dir() {
     touch "$authfile" && \
     chown $u "$authfile" && \
     chmod 600 "$authfile"
+
+  return $?
 }
 
 add_ssh_key() {
@@ -49,6 +51,7 @@ add_ssh_key() {
   cat <<EOM>> $authfile
 command="${TMUX_PATH} -S ${pairlinkpath} attach 2> /dev/null || echo 'No session has been started for you yet -- go ask someone to start one.' ; rm ${pairlinkpath} 2> /dev/null",permitopen="localhost:5900" ${KEY_DATA}
 EOM
+ return $?
 }
 
 #new_user="${new_username}-pair.$(ssh-keygen -lf taylor-ssh.pub | awk '{print $2}' | tr -d ':').pair"
@@ -56,8 +59,9 @@ new_user="${new_username}-$(ssh-keygen -lf taylor-ssh.pub | awk '{print $2}' | t
 user_sn=$new_username
 
 [ "$_DEBUG_ON" = true ] && set -x
-$USER_CREATE $new_user
+$USER_CREATE $new_user &&  \
+  setup_ssh_dir $new_user && \
+  add_ssh_key $user_sn $new_user "$ssh_key" && \
+echo "Setup remote pair user $new_user for $user_sn.  Tell them to ssh to $new_user@YOUR_IP.  Run the enable script to allow access" | fmt
 
-setup_ssh_dir $new_user
-add_ssh_key $user_sn $new_user "$ssh_key"
 set +x
