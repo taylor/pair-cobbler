@@ -1,0 +1,14 @@
+#!/bin/sh
+
+usage() {
+  echo "usage: $0 <user>"
+}
+
+if [ "$1" = "" ] ; then
+  usage
+  exit 0
+fi
+
+PAIRDIR=/tmp/${USER}.pair
+cd $PAIDIR
+rm "$1".pairssh

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+usage() {
+  echo "usage: $0 <session name> <user>"
+}
+
+if [ "$2" = "" ] ; then
+  usage
+  exit 0
+fi
+
+PAIRDIR=/tmp/${USER}.pair
+cd $PAIDIR
+ln -fs "$1" "$2".pairssh
+
+echo "Go set the correct permissions on ${PAIRDIR}/$1"

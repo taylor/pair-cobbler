@@ -5,6 +5,8 @@
 # This setup expects the local machine to be used by one person w/multiple
 # remote people connecting.  I hope to remove that limitation with a future
 # design change.
+#
+# TODO: decide on shortname vs real created name...
 
 _DEBUG_ON=false
 

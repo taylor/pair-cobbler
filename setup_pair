@@ -1,0 +1,13 @@
+#!/bin/bash
+
+PAIRDIR=/tmp/${USER}.pair
+mkdir -p ${PAIRDIR} 2> /dev/null
+
+die() {
+  echo "$*"
+  exit
+}
+
+test -O ${PAIRDIR} || die "You do not own ${PAIRDIR}"
+
+tmux -S ${PAIRDIR}/$1
