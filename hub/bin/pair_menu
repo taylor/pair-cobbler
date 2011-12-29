@@ -4,6 +4,14 @@ script_path = Dir.chdir(File.expand_path(File.dirname(__FILE__))) { Dir.pwd }
 apphome_path = Dir.chdir(script_path + '/..') { Dir.pwd }
 
 require 'yaml'
+require 'logger'
+require 'rubygems'
+require 'sqlite3'
+
+LOGFILE='/tmp/pair_menu.log'
+PAIRDIR='/home/pair'
+OVPNIPDBPATH=PAIRDIR + '/openvpn-ips.db'
+TABLENAME='connections'
 
 class PairUser
   attr_accessor :name, :local_port, :vpn_addr, :remote_port, :auto, :type, :vpn, :ssh, :ruser
@@ -15,23 +23,30 @@ class PairUser
   end
 end
 
-# TODO: use local DNS rather than VPN IP or just use ssh/.config
-# TODO: have ports and info in an external file... maybe looks for all ports in a range 20xxx->21xxx?
-users = []
+log = Logger.new(LOGFILE)
+
+config_file = apphome_path + "/config.yml"
 
 begin
-  config = YAML.load_file(apphome_path + "/config.yml")
+  config = YAML.load_file(config_file)
 rescue Errno::ENOENT
-  puts "You need a config file!"
+  log.fatal "pair_menu" "Config file #{config_file} not found!"
+  puts "Pairing system not configured!"
   exit 1
 end
 
 if config['general'].nil? or config['users'].nil?
+  log.fatal "pair_menu" "Config file #{config_file} looks invalid.  Check the example"
   puts "Your config file looks invalid.  Check out the example"
   exit 1
 end
 
 IPBASE= config['general']['ipbase'].nil? ? '192.168.100' : config['general']['ipbase']
+
+# TODO: use local DNS rather than VPN IP or just use ssh/.config
+# TODO: have ports and info in an external file... maybe looks for all ports in a range 20xxx->21xxx?
+users = []
+
 
 config['users'].each do |u|
   users << PairUser.new(u['id'], u['port'].to_i, "#{IPBASE}.#{u['octet']}", u['ruser'])
@@ -44,6 +59,14 @@ users << PairUser.new("c-sero_comm", 21122, "#{IPBASE}.201", "root")
 # the following is not working on OS X
 pppaddrs=`/sbin/ifconfig`.grep(/P-t-P:172.25/).collect {|x| x.split[2].split(':')[1]}
 sshports=`netstat -nlt`.grep(/127.0.0.1/).collect {|x| x.split[3].split(':')[1].chomp}
+
+unless File.exists?(OVPNIPDBPATH)
+  log.warn "pair_menu" "#{OVPNIPDBPATH} does not exist!"
+end
+
+# TODO: read ips from openvpn db
+#@db = SQLite3::Database.new(OVPNIPDBPATH)
+
 panda=pppaddrs + sshports
 
 @available_users=[]
