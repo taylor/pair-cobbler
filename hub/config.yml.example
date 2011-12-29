@@ -1,0 +1,16 @@
+---
+users:
+  - id: bob
+    port: 10022
+    octet: 100
+    ruser: pair
+  - id: janet
+    port: 10122
+    octet: 101
+    ruser: pair
+  - id: mike
+    port: 20222
+    octet: 102
+    ruser: mike
+general:
+  ipbase: 192.168.100

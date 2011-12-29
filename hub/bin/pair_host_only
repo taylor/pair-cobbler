@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+def goodbye
+  puts "\nGoodbye.  Thanks for playing."
+  exit
+end
+
+["INT", "TERM", "ABRT"].each {|t| trap(t) { exit ; } }
+#trap("INT") { exit ; }
+#trap("TERM") { exit ; }
+#trap("ABRT") { exit ; }
+trap("EXIT") { goodbye ; }
+
+puts "Your connected.  Good job!"
+
+loop { sleep 10 ; }
