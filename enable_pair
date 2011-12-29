@@ -13,4 +13,4 @@ PAIRDIR=/tmp/${USER}.pair
 cd $PAIDIR
 ln -fs "$1" "$2".pairssh
 
-echo "Go set the correct permissions on ${PAIRDIR}/$1"
+echo "Go set the correct permissions on ${PAIRDIR}"
