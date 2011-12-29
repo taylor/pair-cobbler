@@ -17,8 +17,14 @@ if [ ! -d  "$PAIRDIR" ] ; then
   exit 1
 fi
 
-cd $PAIDIR
+cd $PAIRDIR
 
 ln -fs "$1" "$2".pairssh
 
-echo "Go set the correct permissions on ${PAIRDIR}"
+echo -n "Set permissions on shared session (y|N)? "
+read resp
+if [ "$resp" = "y" -o "$resp" = "Y" ] ; then
+  chmod 666 ${PAIRDIR}/$1
+else
+  echo "Go set the correct permissions on ${PAIRDIR}"
+fi
