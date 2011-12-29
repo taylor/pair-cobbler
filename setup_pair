@@ -1,6 +1,7 @@
 #!/bin/bash
 
-PAIRDIR=/tmp/${USER}.pair
+#PAIRDIR=/tmp/${USER}.pair
+PAIRDIR=/tmp/pair-cobbler
 mkdir -p ${PAIRDIR} 2> /dev/null
 
 die() {
