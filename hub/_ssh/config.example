@@ -1,0 +1,14 @@
+Host bob
+  Hostname localhost
+  HostkeyAlias localhost:10022
+  Port 10022
+
+Host janet
+  Hostname localhost
+  HostkeyAlias localhost:10122
+  Port 10122
+
+Host mike
+  Hostname localhost
+  HostkeyAlias localhost:10222
+  Port 10222
