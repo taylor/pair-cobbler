@@ -9,7 +9,8 @@ if [ "$2" = "" ] ; then
   exit 0
 fi
 
-PAIRDIR=/tmp/${USER}.pair
+#PAIRDIR=/tmp/${USER}.pair
+PAIRDIR=/tmp/pair-cobbler
 cd $PAIDIR
 ln -fs "$1" "$2".pairssh
 
