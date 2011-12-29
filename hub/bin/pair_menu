@@ -85,10 +85,10 @@ ctypes.each do |t|
 end
 
 #puts "Welcome to the Pairing hub"
-welcome_message = %{
-                     /)
+welcome_message = 
+%{                     /)
                   ,.//,
-                /` `'` `\
+                /` `'` `\\
                :         :                                        
               :           :
              :   Welcome   :
@@ -98,12 +98,12 @@ welcome_message = %{
           ;  Pair Programming ;
           ;                   ;
           :       Hub         :
-           \                 /
+           \\                 /
             `._,.='``'-.,_,.`
               '-._  ~  _.-'
                   `'''`
 }
-puts "#{welcome_messsage}\n=============================================================================="
+puts "#{welcome_message}=============================================================================="
 
 @available_users.flatten!.uniq!
 if @available_users.empty?
