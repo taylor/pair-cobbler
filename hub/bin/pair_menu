@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 script_path = Dir.chdir(File.expand_path(File.dirname(__FILE__))) { Dir.pwd }
-config_path = Dir.chdir(script_path + '/../config') { Dir.pwd }
+apphome_path = Dir.chdir(script_path + '/..') { Dir.pwd }
 
 require 'yaml'
 
@@ -20,9 +20,14 @@ end
 users = []
 
 begin
-  config = YAML.load_file(ENV['HOME'] + "/config.yml")
+  config = YAML.load_file(apphome_path + "/config.yml")
 rescue Errno::ENOENT
   puts "You need a config file!"
+  exit 1
+end
+
+if config['general'].nil? or config['users'].nil?
+  puts "Your config file looks invalid.  Check out the example"
   exit 1
 end
 
@@ -36,7 +41,7 @@ end
 users << PairUser.new("c-sero_comm", 21122, "#{IPBASE}.201", "root")
 
 # TODO: if auto passed as arg then auto connect to first available session?
-
+# the following is not working on OS X
 pppaddrs=`/sbin/ifconfig`.grep(/P-t-P:172.25/).collect {|x| x.split[2].split(':')[1]}
 sshports=`netstat -nlt`.grep(/127.0.0.1/).collect {|x| x.split[3].split(':')[1].chomp}
 panda=pppaddrs + sshports
@@ -56,16 +61,34 @@ ctypes.each do |t|
   end
 end
 
-@available_users.flatten!.uniq!
+#puts "Welcome to the Pairing hub"
+welcome_message = %{
+                     /)
+                  ,.//,
+                /` `'` `\
+               :         :                                        
+              :           :
+             :   Welcome   :
+            :               :
+           :     to the      ;
+          :                   :
+          ;  Pair Programming ;
+          ;                   ;
+          :       Hub         :
+           \                 /
+            `._,.='``'-.,_,.`
+              '-._  ~  _.-'
+                  `'''`
+}
+puts "#{welcome_messsage}\n=============================================================================="
 
+@available_users.flatten!.uniq!
 if @available_users.empty?
   puts "No pairing sessions available"
   puts "Goodbye"
   puts ""
   exit 0
 else  
-  puts "Welcome to the Pairing hub"
-  puts "=============================================================================="
   puts "Choose a pair session (#), H for help or Q to quit:"
   @available_users.each_with_index do |u,i|
     puts "#{i}: #{u.name}"
