@@ -37,8 +37,8 @@ end
 nettype = ARGV[0].to_sym
 
 unless PairCobbler::NetHook::VALID_NET_TYPES.include? nettype
-  puts "Invalid network type given"
-  log.fatal "#{logpre}Invalid network type given"
+  puts "Invalid network type given: #{nettype}"
+  log.fatal "#{logpre}Invalid network type given: #{nettype}"
   exit 1
 end
 
@@ -103,9 +103,9 @@ nethook = PairCobbler::NetHook.new(dbpath)
 
 case action
 when :connect
-  addip(remote_ip,username, nettype.to_s)
+  nethook.addip(remote_ip,username, nettype.to_s)
 when :disconnect
-  removeip(remote_ip, nettype.to_s)
+  nethook.removeip(remote_ip, nettype.to_s)
 else
   puts "Unknown action: #{action}"
   log.warn "pair-hook: " "Unknown hook action given"
