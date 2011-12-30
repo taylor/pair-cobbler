@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+#!/opt/bin/ruby
+
+LOGFILE='/tmp/pair-cobbler-pptp-hook.log'
+PAIRDIR='/home/pair'
+DBPATH=PAIRDIR + '/pair-ips.db'
+TABLENAME='connections'
+
+#$:.unshift PAIRDIR + '/lib'
+#require 'pair_cobbler'
+#require 'pair†cobbler'
+require 'logger'
+require 'rubygems'
+require 'sqlite3'
+
+#TODO: DRY this up... should merge with openvpn and use a lib?
+
+def initdb
+  sql = "CREATE TABLE IF NOT EXISTS #{TABLENAME}(id integer primary key,ip TEXT, name TEXT, state BOOLEAN default 0, ctype TEXT, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+  @db.execute(sql)
+end
+
+def addip(ip=nil,name=nil, ctype=nil)
+  return if ip.nil? or name.nil? or ctype.nil?
+  sql = "INSERT INTO #{TABLENAME} (ip,name,ctype,state) values (?,?,?,1)"
+  stmt = @db.prepare(sql)
+  stmt.bind_params(ip,name)
+  stmt.execute
+end
+
+def setdisconnected(ip=nil)
+  return if ip.nil?
+  sql = "UPDATE #{TABLENAME} SET state = 0 WHERE ip = ?"
+  stmt = @db.prepare(sql)
+  stmt.bind_params(ip)
+  stmt.execute
+end
+
+def removeip(ip=nil, ctype=nil)
+  return if ip.nil? or ctype.nil?
+  sql = "DELETE FROM #{TABLENAME} WHERE ip = ?"
+  stmt = @db.prepare(sql)
+  stmt.bind_params(ip)
+  stmt.execute
+end
+
+log = Logger.new(LOGFILE)
+
+unless File.exists?(PAIRDIR)
+  log.fatal "pair-hook" "#{PAIRDIR} does not exist!"
+  exit 0
+end
+
+@db = SQLite3::Database.new(DBPATH)
+initdb
+
+action=ARGV[0]
+remote_ip=ARGV[6]
+
+if remote_ip.nil?
+  puts "Could not find IP!"
+  log.fatal "pair-hook" "Could not find IP"
+end
+
+case action
+when 'up'
+  begin
+    username=open('/etc/ppp/chap-secrets').grep(/#{remote_ip}/).first.split.first
+  rescue
+    puts "Could not find username for #{remote_ip}"
+    log.fatal "pair-hook" "Could not find username for #{remote_ip}"
+    exit 1
+  end
+  addip(remote_ip,username, 'pptp')
+when 'down'
+  removeip(remote_ip, 'pptp')
+else
+  puts "Unknown action #{action}"
+  log.warn "pair-hook" "Unknown hook action"
+end
+exit 0
