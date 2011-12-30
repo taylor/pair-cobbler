@@ -11,15 +11,15 @@ require 'sqlite3'
 
 
 def initdb
-  sql = "CREATE TABLE IF NOT EXISTS #{TABLENAME}(id integer primary key,ip TEXT, state BOOLEAN default 0, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+  sql = "CREATE TABLE IF NOT EXISTS #{TABLENAME}(id integer primary key,ip TEXT, name TEXT, state BOOLEAN default 0, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
   @db.execute(sql)
 end
 
-def addip(ip=nil)
-  return if ip.nil?
-  sql = "INSERT INTO #{TABLENAME} (ip,state) values (?,1)"
+def addip(ip=nil,name=nil)
+  return if ip.nil? or name.nil?
+  sql = "INSERT INTO #{TABLENAME} (ip,name,state) values (?,?,1)"
   stmt = @db.prepare(sql)
-  stmt.bind_params(ip)
+  stmt.bind_params(ip,name)
   stmt.execute
 end
 
@@ -57,7 +57,7 @@ end
 
 case ENV['script_type']
 when 'client-connect'
-  addip(ENV['ifconfig_pool_remote_ip'])
+  addip(ENV['ifconfig_pool_remote_ip'], ENV['common_name'])
 when 'client-disconnect'
   removeip(ENV['ifconfig_pool_remote_ip'])
 else
