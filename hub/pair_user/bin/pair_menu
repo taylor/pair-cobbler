@@ -52,9 +52,6 @@ config['users'].each do |u|
   users << PairUser.new(u['id'], u['port'].to_i, "#{IPBASE}.#{u['octet']}", u['ruser'])
 end
 
-# Customers... 
-users << PairUser.new("c-sero_comm", 21122, "#{IPBASE}.201", "root")
-
 # TODO: if auto passed as arg then auto connect to first available session?
 # the following is not working on OS X
 pppaddrs=`/sbin/ifconfig`.grep(/P-t-P:172.25/).collect {|x| x.split[2].split(':')[1]}
