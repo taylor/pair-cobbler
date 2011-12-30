@@ -9,6 +9,7 @@ require 'logger'
 require 'rubygems'
 require 'sqlite3'
 
+# TODO: merge with pptp hook for a common lib thingy
 
 def initdb
   sql = "CREATE TABLE IF NOT EXISTS #{TABLENAME}(id integer primary key,ip TEXT, name TEXT, state BOOLEAN default 0, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
