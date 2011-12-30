@@ -1,16 +1,14 @@
-PAIRDIR='/home/pair'
-DBPATH=PAIRDIR + '/pair-ips.db'
-TABLENAME='connections'
-
 require 'rubygems'
 require 'sqlite3'
 
+TABLENAME='connections'
+
 module PairCobbler 
   class NetHook
-    attr_accessor :db
-    def initialize
-      @db = SQLite3::Database.new(DBPATH)
-      File.chmod(0644, DBPATH)
+    attr_accessor :db, :connection_table
+    def initialize(dbpath=nil)
+      @db = SQLite3::Database.new(dbpath)
+      File.chmod(0644, dbpath)
       initdb
     end
 
