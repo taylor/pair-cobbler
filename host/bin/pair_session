@@ -10,4 +10,4 @@ PAIRDIR=/tmp/pair-cobbler
 
 mkdir -p ${PAIRDIR} 2> /dev/null
 test -O ${PAIRDIR} || die "You do not own ${PAIRDIR}"
-tmux -S ${PAIRDIR}/$1
+tmux -S ${PAIRDIR}/$1 attach > /dev/null || tmux -S ${PAIRDIR}/$1
