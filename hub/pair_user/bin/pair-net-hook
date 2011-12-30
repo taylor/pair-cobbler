@@ -2,27 +2,34 @@
 
 LOGFILE='/tmp/pair-cobbler-net-hook.log'
 PAIRDIR='/home/pair'
-pair_lib_dir = PAIRDIR + "/lib"
+pair_lib_path = PAIRDIR + "/lib"
 config_file = PAIRDIR + "/config.yml"
 
 $:.unshift pair_lib_path
 
-require 'pair_cobbler/net_hooks'
+require 'pair_cobbler/net_hook'
 require 'logger'
+require 'rubygems'
+require 'yaml'
+
+unless ARGV.length > 0
+  puts "No arguments given"
+  exit 1
+end
 
 log = Logger.new(LOGFILE)
 logpre="pair-hook: "
 
 unless File.exists?(PAIRDIR)
   puts "#{PAIRDIR} does not exist.  Set that up first."
-  log.fatal logpre "#{PAIRDIR} does not exist.  Set that up first."
+  log.fatal "#{logpre}#{PAIRDIR} does not exist.  Set that up first."
   exit 1
 end
 
 begin
   config = YAML.load_file(config_file)
 rescue Errno::ENOENT
-  log.fatal logpre "Config file #{config_file} not found!"
+  log.fatal "#{logpre}Config file #{config_file} not found!"
   puts "Pair configuration file required in #{PAIRDIR}!"
   exit 1
 end
@@ -31,7 +38,7 @@ nettype = ARGV[0].to_sym
 
 unless PairCobbler::NetHook::VALID_NET_TYPES.include? nettype
   puts "Invalid network type given"
-  log.fatal logpre "Invalid network type given"
+  log.fatal "#{logpre}Invalid network type given"
   exit 1
 end
 
@@ -47,7 +54,7 @@ when :pptp
   remote_ip=ARGV[6]
   if remote_ip.nil?
     puts "Could not find IP!"
-    log.fatal logpre "Could not find IP"
+    log.fatal "#{logpre}Could not find IP"
     exit 1
   end
   if action == "up"
@@ -56,18 +63,18 @@ when :pptp
       username=open('/etc/ppp/chap-secrets').grep(/#{remote_ip}/).first.split.first
     rescue
       puts "Could not find username for #{remote_ip}"
-      log.fatal logpre "Could not find username for #{remote_ip}"
+      log.fatal "#{logpre}Could not find username for #{remote_ip}"
       exit 1
     end
   elsif action == "down"
     action = :disconnect
   else
-    action :unknown
+    action = :unknown
   end
 when :openvpn
   if ENV['ifconfig_pool_remote_ip'].nil? or ENV['script_type'].nil?
     puts "Could not find script type or remote ip in environment variables"
-    log.fatal logpre "Could not find script type or remote ip in environment variables!"
+    log.fatal "#{logpre}Could not find script type or remote ip in environment variables!"
     exit 1
   end
   remote_ip=ENV['ifconfig_pool_remote_ip']
@@ -81,13 +88,13 @@ when :openvpn
   else
     action = :unknown
     puts "#{ENV['script_type']} not handled"
-    log.fatal logpre "#{ENV['script_type']} not handled"
+    log.fatal "#{logpre}#{ENV['script_type']} not handled"
     exit 1
   end
 when :ssh
   #TODO: maybe do ssh
   puts "SSH not supported yet"
-  log.info logpre "SSH not supported yet"
+  log.info "#{logpre}SSH not supported yet"
   exit 0
 end
 
