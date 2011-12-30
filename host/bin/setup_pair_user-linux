@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# NOTE:
+#
+# This setup expects the local machine to be used by one person w/multiple
+# remote people connecting.  I hope to remove that limitation with a future
+# design change.
+#
+# TODO: decide on shortname vs real created name...
+
+_DEBUG_ON=false
+
+USER_CREATE=useradd
+HOME_ROOT=/home
+TMUX_PATH="$(which tmux)"
+
+me=$(basename $0)
+usage() {
+  echo "$me <username> <ssh_public_key>"
+}
+  
+if [ -z "$2" -o ! -f "$2" ] ; then
+  usage
+  exit 1
+fi
+
+new_username="$1"
+ssh_key="$2"
+
+setup_ssh_dir() {
+  u=$1
+  sshdir="${HOME_ROOT}/$u/.ssh"
+  authfile="$sshdir/authorized_keys"
+  mkdir -p "$sshdir" && \
+    chown $u "$sshdir" && \
+    chmod 700 "$sshdir" && \
+    touch "$authfile" && \
+    chown $u "$authfile" && \
+    chmod 600 "$authfile"
+
+  return $?
+}
+
+add_ssh_key() {
+  name="$1"
+  u="$2"
+  k="$3"
+  sshdir="${HOME_ROOT}/$u/.ssh"
+  authfile="$sshdir/authorized_keys"
+  pairlinkpath="/tmp/${name}.pairssh"
+
+  KEY_DATA=`cat "$k"`
+  cat <<EOM>> $authfile
+command="${TMUX_PATH} -S ${pairlinkpath} attach 2> /dev/null || echo 'No session has been started for you yet -- go ask someone to start one.' ; rm ${pairlinkpath} 2> /dev/null",permitopen="localhost:5900" ${KEY_DATA}
+EOM
+ return $?
+}
+
+#new_user="${new_username}-pair.$(ssh-keygen -lf taylor-ssh.pub | awk '{print $2}' | tr -d ':').pair"
+new_user="${new_username}-$(ssh-keygen -lf taylor-ssh.pub | awk '{print $2}' | tr -d ':' | cut -b -8)"
+user_sn=$new_username
+
+[ "$_DEBUG_ON" = true ] && set -x
+$USER_CREATE $new_user &&  \
+  setup_ssh_dir $new_user && \
+  add_ssh_key $user_sn $new_user "$ssh_key" && \
+echo "Setup remote pair user $new_user for $user_sn.  Tell them to ssh to $new_user@YOUR_IP.  Run the enable script to allow access" | fmt
+
+set +x
