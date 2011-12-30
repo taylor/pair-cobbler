@@ -6,7 +6,10 @@ TABLENAME='connections'
 module PairCobbler 
   class NetHook
     attr_accessor :db, :connection_table
+    VALID_NET_TYPES = [:pptp, :openvpn, :ssh].freeze
+
     def initialize(dbpath=nil)
+      #raise InvalidNetTypeError, "A net hook can only be of type PPTP (:pptp), OpenVPN (:openvpn), SSH (:ssh)" unless VALID_NET_TYPES.include? ntype
       @db = SQLite3::Database.new(dbpath)
       File.chmod(0644, dbpath)
       initdb
