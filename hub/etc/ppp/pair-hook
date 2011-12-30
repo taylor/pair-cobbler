@@ -52,10 +52,11 @@ unless File.exists?(PAIRDIR)
 end
 
 @db = SQLite3::Database.new(DBPATH)
+File.chmod(0644, DBPATH)
 initdb
 
 action=ARGV[0]
-remote_ip=ARGV[6]
+remote_ip=ARGV[5]
 
 if remote_ip.nil?
   puts "Could not find IP!"
