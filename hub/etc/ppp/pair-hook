@@ -1,82 +1,106 @@
 #!/usr/bin/env ruby
-#!/opt/bin/ruby
 
-LOGFILE='/tmp/pair-cobbler-pptp-hook.log'
+LOGFILE='/tmp/pair-cobbler-net-hook.log'
 PAIRDIR='/home/pair'
-DBPATH=PAIRDIR + '/pair-ips.db'
-TABLENAME='connections'
+pair_lib_dir = PAIRDIR + "/lib"
+config_file = PAIRDIR + "/config.yml"
 
-#$:.unshift PAIRDIR + '/lib'
-#require 'pair_cobbler'
-#require 'pair†cobbler'
+$:.unshift pair_lib_path
+
+require 'pair_cobbler/net_hooks'
 require 'logger'
-require 'rubygems'
-require 'sqlite3'
-
-#TODO: DRY this up... should merge with openvpn and use a lib?
-
-def initdb
-  sql = "CREATE TABLE IF NOT EXISTS #{TABLENAME}(id integer primary key,ip TEXT, name TEXT, state BOOLEAN default 0, ctype TEXT, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
-  @db.execute(sql)
-end
-
-def addip(ip=nil,name=nil, ctype=nil)
-  return if ip.nil? or name.nil? or ctype.nil?
-  sql = "INSERT INTO #{TABLENAME} (ip,name,ctype,state) values (?,?,?,1)"
-  stmt = @db.prepare(sql)
-  stmt.bind_params(ip,name,ctype)
-  stmt.execute
-end
-
-def setdisconnected(ip=nil, ctype=nil)
-  return if ip.nil?
-  sql = "UPDATE #{TABLENAME} SET state = 0 WHERE ip = ? AND ctype = ?"
-  stmt = @db.prepare(sql)
-  stmt.bind_params(ip, ctype)
-  stmt.execute
-end
-
-def removeip(ip=nil, ctype=nil)
-  return if ip.nil? or ctype.nil?
-  sql = "DELETE FROM #{TABLENAME} WHERE ip = ? AND ctype = ?"
-  stmt = @db.prepare(sql)
-  stmt.bind_params(ip, ctype)
-  stmt.execute
-end
 
 log = Logger.new(LOGFILE)
+logpre="pair-hook: "
 
 unless File.exists?(PAIRDIR)
-  log.fatal "pair-hook" "#{PAIRDIR} does not exist!"
+  puts "#{PAIRDIR} does not exist.  Set that up first."
+  log.fatal logpre "#{PAIRDIR} does not exist.  Set that up first."
+  exit 1
+end
+
+begin
+  config = YAML.load_file(config_file)
+rescue Errno::ENOENT
+  log.fatal logpre "Config file #{config_file} not found!"
+  puts "Pair configuration file required in #{PAIRDIR}!"
+  exit 1
+end
+
+nettype = ARGV[0].to_sym
+
+unless PairCobbler::NetHook::VALID_NET_TYPES.include? nettype
+  puts "Invalid network type given"
+  log.fatal logpre "Invalid network type given"
+  exit 1
+end
+
+logpre = "#{nettype.to_s}-hook: "
+
+action=nil
+remote_ip=nil
+username=nil
+
+case nettype
+when :pptp
+  action=ARGV[1]
+  remote_ip=ARGV[6]
+  if remote_ip.nil?
+    puts "Could not find IP!"
+    log.fatal logpre "Could not find IP"
+    exit 1
+  end
+  if action == "up"
+    action = :connect
+    begin
+      username=open('/etc/ppp/chap-secrets').grep(/#{remote_ip}/).first.split.first
+    rescue
+      puts "Could not find username for #{remote_ip}"
+      log.fatal logpre "Could not find username for #{remote_ip}"
+      exit 1
+    end
+  elsif action == "down"
+    action = :disconnect
+  else
+    action :unknown
+  end
+when :openvpn
+  if ENV['ifconfig_pool_remote_ip'].nil? or ENV['script_type'].nil?
+    puts "Could not find script type or remote ip in environment variables"
+    log.fatal logpre "Could not find script type or remote ip in environment variables!"
+    exit 1
+  end
+  remote_ip=ENV['ifconfig_pool_remote_ip']
+  username=ENV['common_name']
+
+  case ENV['script_type']
+  when 'client-connect'
+    action = :connect
+  when 'client-disconnect'
+    action = :disconnect
+  else
+    action = :unknown
+    puts "#{ENV['script_type']} not handled"
+    log.fatal logpre "#{ENV['script_type']} not handled"
+    exit 1
+  end
+when :ssh
+  #TODO: maybe do ssh
+  puts "SSH not supported yet"
+  log.info logpre "SSH not supported yet"
   exit 0
 end
 
-@db = SQLite3::Database.new(DBPATH)
-File.chmod(0644, DBPATH)
-initdb
-
-action=ARGV[0]
-remote_ip=ARGV[5]
-
-if remote_ip.nil?
-  puts "Could not find IP!"
-  log.fatal "pair-hook" "Could not find IP"
-end
+dbpath=config['nethooks']['dbpath']
+nethook = PairCobbler::NetHook.new(dbpath)
 
 case action
-when 'up'
-  begin
-    username=open('/etc/ppp/chap-secrets').grep(/#{remote_ip}/).first.split.first
-  rescue
-    puts "Could not find username for #{remote_ip}"
-    log.fatal "pair-hook" "Could not find username for #{remote_ip}"
-    exit 1
-  end
-  addip(remote_ip,username, 'pptp')
-when 'down'
-  removeip(remote_ip, 'pptp')
+when :connect
+  addip(remote_ip,username, nettype.to_s)
+when :disconnect
+  removeip(remote_ip, nettype.to_s)
 else
-  puts "Unknown action #{action}"
-  log.warn "pair-hook" "Unknown hook action"
+  puts "Unknown action: #{action}"
+  log.warn "pair-hook: " "Unknown hook action given"
 end
 exit 0
